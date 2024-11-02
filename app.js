@@ -10,6 +10,7 @@ const ExpressError = require("./utils/ExpressError.js");
 const {listingSchema,reviewSchema} = require("./schema.js");
 const Review= require("./models/review.js");
 const listings = require("./routes/listing.js");
+const reviews = require("./routes/review.js");
 
 const Mongo_url = "mongodb://127.0.0.1:27017/wanderlust";
 main().then(()=>{
@@ -33,52 +34,11 @@ app.get("/" , (req , res)=> {
     res.send("hi! i am root");
 });
 
-
-const validateReview = (req,res,next) => {
-    let {error} = reviewSchema.validate(req.body);
-    if (error){
-       let errMsg =  error.details.map((el) => el.message).join(",");
-     throw new ExpressError(400 , errMsg);
-    }else{
-        next();
-    }
-};
-
   app.use("/listings", listings);
-
-//reviews
-// post route
-app.post("/listings/:id/reviews", validateReview, wrapAsync(async (req, res) => {
-    console.log(req.body);
-    let listing = await Listing.findById(req.params.id);
-    let newReview = new Review(req.body.review);
-
-    listing.reviews.push(newReview);
-
-   await newReview.save();
-   await listing.save();
-   console.log("review saved");
-
-    res.redirect(`/listings/${listing._id}`); 
-}));
-
-
-// app.get("/testListing" , async (req,res) => {
-//     let sampleListing = new Listing({
-//         title : "my new villa",
-//        description: "by the baech",
-//        price:1200,
-//        location: "goa",
-//        country: "india",
-//       });
-//      await sampleListing.save();
-//      console.log("sample testing");
-//      res.send("succesfull testing");
-//     });
+  app.use("/listings/:id/reviews" , reviews);
 
 app.all("*" , (req,res,next) =>{
     next(new ExpressError(404, "page not found!"));
-
 });
 
 app.use((err, req, res, next) => {
